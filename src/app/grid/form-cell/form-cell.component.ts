@@ -12,13 +12,19 @@ import {FormGroup} from "@angular/forms";
 export class FormCellComponent {
     form: FormGroup;
     key;
+    value;
 
     agInit(params: any) {
         this.key = params.context.createKey(params.node.id, params.column);
+        this.value = params.value;
     }
 
     refresh(params: any) : boolean {
         this.form = params.context.form;
+
+        // this could also be done in GridComponent.createFormControls, but the cell component could be doing something with
+        // the value, so it feels more natural that the control value be set here
+        this.form.controls[this.key].patchValue(this.value);
         return true;
     }
 }

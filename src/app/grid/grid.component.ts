@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
+import {FormControl, FormGroup} from "@angular/forms";
 
 import {Column, ColumnApi, GridApi, GridReadyEvent, RowNode} from "ag-grid";
 import {FormCellComponent} from "./form-cell/form-cell.component";
@@ -31,7 +31,7 @@ export class GridComponent {
     columnDefs;
     rowData;
 
-    constructor(private formBuilder: FormBuilder) {
+    constructor() {
         this.columnDefs = [
             {field: "make", cellRenderer: 'formCell'},
             {field: "model", cellRenderer: 'formCell'},
@@ -51,28 +51,24 @@ export class GridComponent {
         this.api = params.api;
         this.columnApi = params.columnApi;
 
-        this.api.sizeColumnsToFit();
-
-        this.createFormControls();
-
         // slight chicken and egg here - the grid cells will be created before the grid is ready, but
         // we need set formGroup up front
         // as such we'll create the grid (and cells) and force refresh the cells
         // FormCellComponent will then set the form in the refresh, completing the loop
         // this is only necessary once, on initialisation
-        this.api.refreshCells({force: true})
+        this.createFormControls();
+        this.api.refreshCells({force: true});
+
+        this.api.sizeColumnsToFit();
     }
 
     private createFormControls() {
         let columns = this.columnApi.getAllColumns();
 
-        // todo add FormArray for each row
         this.api.forEachNode((rowNode: RowNode) => {
             columns.forEach((column: Column) => {
-                const key = this.createKey(rowNode.id, column);
-                const value = rowNode.data[column.getColDef().field];
-
-                this.gridForm.addControl(key, new FormControl(value))
+                const key = this.createKey(rowNode.id, column); // the cells will use this same createKey method
+                this.gridForm.addControl(key, new FormControl())
             })
         });
     }
@@ -92,7 +88,7 @@ export class GridComponent {
         console.log(JSON.stringify(this.gridForm.value));
     }
 
-    private createKey(rowId: string, column: Column) {
+    private createKey(rowId: string, column: Column) : string {
         return `${rowId}${column.getColId()}`;
     }
 }
