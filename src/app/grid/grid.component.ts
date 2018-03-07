@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 
-import {ColumnApi, GridApi, GridReadyEvent} from "ag-grid";
+import {Column, ColumnApi, GridApi, GridReadyEvent, RowNode} from "ag-grid";
 import {FormCellComponent} from "./form-cell/form-cell.component";
 
 @Component({
@@ -26,7 +26,7 @@ export class GridComponent {
     private api: GridApi;
     private columnApi: ColumnApi;
 
-    gridForm: FormGroup;
+    gridForm: FormGroup = new FormGroup({});
 
     columnDefs;
     rowData;
@@ -45,15 +45,6 @@ export class GridComponent {
             {make: "Seat", model: "Leon", price: 32000},
             {make: "Honda", model: "CRV", price: 35000},
         ];
-
-        // slight chicken and egg here - the grid cells will be created before the grid is ready, but
-        // we need set formGroup up front
-        // as such we'll create the grid form based on the row data and NOT use the grid's API to iterate over the row nodes,
-        // which would be a bit more flexible
-        this.gridForm = this.createGridForm(
-            this.columnDefs.map((colDef) => colDef.field),
-            this.rowData
-        );
     }
 
     gridReady(params: GridReadyEvent) {
@@ -61,23 +52,29 @@ export class GridComponent {
         this.columnApi = params.columnApi;
 
         this.api.sizeColumnsToFit();
+
+        this.createFormControls();
+
+        // slight chicken and egg here - the grid cells will be created before the grid is ready, but
+        // we need set formGroup up front
+        // as such we'll create the grid (and cells) and force refresh the cells
+        // FormCellComponent will then set the form in the refresh, completing the loop
+        // this is only necessary once, on initialisation
+        this.api.refreshCells({force: true})
     }
 
-    private createGridForm(columns: string[],
-                           rowData: any[]): FormGroup {
-        const groupedControls = {};
+    private createFormControls() {
+        let columns = this.columnApi.getAllColumns();
 
         // todo add FormArray for each row
-        columns.forEach((column) => {
-            rowData.forEach((data: any) => {
-                const key = this.createKey(column, data);
-                const value = data[column];
+        this.api.forEachNode((rowNode: RowNode) => {
+            columns.forEach((column: Column) => {
+                const key = this.createKey(rowNode.id, column);
+                const value = rowNode.data[column.getColDef().field];
 
-                groupedControls[key] = new FormControl(value);
-            });
+                this.gridForm.addControl(key, new FormControl(value))
+            })
         });
-
-        return new FormGroup(groupedControls);
     }
 
     getComponents() {
@@ -95,8 +92,7 @@ export class GridComponent {
         console.log(JSON.stringify(this.gridForm.value));
     }
 
-    private createKey(column: string, data: any) {
-        let rowIdentifier = `${data.make}${data.model}`;
-        return `${column}${rowIdentifier}`;
+    private createKey(rowId: string, column: Column) {
+        return `${rowId}${column.getColId()}`;
     }
 }
