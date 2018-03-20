@@ -1,5 +1,6 @@
 import {Component} from '@angular/core';
 import {FormControl, FormGroup} from "@angular/forms";
+import {MatSnackBar} from '@angular/material';
 
 import {Column, ColumnApi, GridApi, GridReadyEvent, RowNode} from "ag-grid";
 import {FormCellComponent} from "./form-cell/form-cell.component";
@@ -7,43 +8,51 @@ import {FormCellComponent} from "./form-cell/form-cell.component";
 @Component({
     selector: 'app-grid',
     template: `
-        <form (ngSubmit)="onSubmit()" [formGroup]="gridForm">
-            <ag-grid-angular style="width: 750px; height: 200px;" class="ag-theme-fresh"
+        <form style="width: 750px; height: 300px;"
+              (ngSubmit)="onSubmit()" [formGroup]="gridForm">
+            <ag-grid-angular style="width: 100%; height: 100%;" class="ag-theme-material"
                              [rowData]="rowData"
                              [columnDefs]="columnDefs"
 
                              [frameworkComponents]="getComponents()"
                              [context]="getContext()"
 
+                             [getRowNodeId]="getRowNodeId"
+
+
                              (gridReady)="gridReady($event)">
             </ag-grid-angular>
-            <button type="submit" [disabled]="!gridForm.valid">Save</button>
+            <button style="margin-top: 10px; float: right;"
+                    mat-raised-button [disabled]="!gridForm.valid"
+                    type="submit">Submit
+            </button>
         </form>
-        <p>Form value: {{ gridForm.value | json }}</p>
     `,
 })
 export class GridComponent {
     private api: GridApi;
     private columnApi: ColumnApi;
 
+    // this cannot be null - create it with no controls instead
     gridForm: FormGroup = new FormGroup({});
 
     columnDefs;
     rowData;
 
-    constructor() {
+    constructor(public snackBar: MatSnackBar) {
         this.columnDefs = [
-            {field: "make", cellRenderer: 'formCell'},
-            {field: "model", cellRenderer: 'formCell'},
-            {field: "price", cellRenderer: 'formCell'}
+            {headerName: 'Order #', field: "orderNumber", width: 110, suppressSizeToFit: true},
+            {headerName: 'Make', field: "make", cellRenderer: 'formCell'},
+            {headerName: 'Model', field: "model", cellRenderer: 'formCell'},
+            {headerName: 'Price', field: "price", cellRenderer: 'formCell'}
         ];
 
         this.rowData = [
-            {make: "Toyota", model: "Celica", price: 35000},
-            {make: "Ford", model: "Mondeo", price: 32000},
-            {make: "Porsche", model: "Boxter", price: 72000},
-            {make: "Seat", model: "Leon", price: 32000},
-            {make: "Honda", model: "CRV", price: 35000},
+            {orderNumber: 1, make: "Toyota", model: "Celica", price: 35000},
+            {orderNumber: 2, make: "Ford", model: "Mondeo", price: 32000},
+            {orderNumber: 3, make: "Porsche", model: "Boxter", price: 72000},
+            {orderNumber: 4, make: "Seat", model: "Leon", price: 32000},
+            {orderNumber: 5, make: "Honda", model: "CRV", price: 35000},
         ];
     }
 
@@ -73,6 +82,14 @@ export class GridComponent {
         });
     }
 
+    getRowNodeId(data: any) {
+        // optional here - ag-Grid will create row ids if you don't supply one, but
+        // if you have a way of uniquely identifying rows here's where you'd do it.
+        // doing so would make it easier to pull out specific rows from the form,
+        // say by order number, as we do here
+        return data.orderNumber;
+    }
+
     getComponents() {
         return {'formCell': FormCellComponent};
     }
@@ -85,10 +102,15 @@ export class GridComponent {
     }
 
     onSubmit() {
-        console.log(JSON.stringify(this.gridForm.value));
+        console.dir(this.gridForm.value);
+
+        this.snackBar.open("Open Console for Form State", null, {
+            verticalPosition: "top",
+            duration: 2000
+        });
     }
 
-    private createKey(rowId: string, column: Column) : string {
+    private createKey(rowId: string, column: Column): string {
         return `${rowId}${column.getColId()}`;
     }
 }

@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+/* ag-Grid styles */
+@import "~ag-grid/dist/styles/ag-grid.css";
+@import "~ag-grid/dist/styles/ag-theme-material.css";
+/* material styles */
+@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+/* by default ag-Grid will apply a border on focused cells - this prevents that*/
+/* it's even easier to set this behaviour using a Sass variable
+    see https://www.ag-grid.com/javascript-grid-styling for more information */
+.ag-cell-focus {
+    border: none !important;
+}
