@@ -4,42 +4,90 @@ import {MatSnackBar} from '@angular/material';
 
 import {Column, ColumnApi, GridApi, GridReadyEvent, RowNode} from "ag-grid";
 import {FormCellComponent} from "./form-cell/form-cell.component";
+import {Branch, BranchService} from "../branch.service";
 
 @Component({
     selector: 'app-grid',
     template: `
-        <form style="width: 750px; height: 300px;"
-              (ngSubmit)="onSubmit()" [formGroup]="gridForm">
-            <ag-grid-angular style="width: 100%; height: 100%;" class="ag-theme-material"
-                             [rowData]="rowData"
-                             [columnDefs]="columnDefs"
+        <div class="container"
+                 fxLayout="column" fxLayoutAlign="start center">
+            <mat-form-field class="dealership-field">
+                <mat-select placeholder="Branch" (selectionChange)="updateForm()" [(value)]="selectedBranch">
+                    <mat-option *ngFor="let branch of branchNames" [value]="branch">
+                        {{ branch }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+            <form class="dealership-form"
+                  fxLayout="column" fxLayoutAlign="start center"
+                  (ngSubmit)="onSubmit()" [formGroup]="gridForm">
+                <mat-form-field class="dealership-field">
+                    <input matInput formControlName="salesperson" placeholder="Lead Salesperson">
+                </mat-form-field>
+                <mat-form-field class="dealership-field">
+                    <input matInput formControlName="telephone" placeholder="Branch Telephone" type="tel">
+                </mat-form-field>
+                <mat-form-field class="dealership-field">
+                    <textarea matInput
+                              formControlName="address"
+                              rows="4"
+                              placeholder="Branch Address"></textarea>
+                </mat-form-field>
+                <ag-grid-angular style="width: 700px; height: 300px;" class="ag-theme-material"
+                                 [rowData]="rowData"
+                                 [columnDefs]="columnDefs"
 
-                             [frameworkComponents]="getComponents()"
-                             [context]="getContext()"
+                                 [frameworkComponents]="getComponents()"
+                                 [context]="getContext()"
 
-                             [getRowNodeId]="getRowNodeId"
+                                 [getRowNodeId]="getRowNodeId"
 
-
-                             (gridReady)="gridReady($event)">
-            </ag-grid-angular>
-            <button style="margin-top: 10px; float: right;"
-                    mat-raised-button [disabled]="!gridForm.valid"
-                    type="submit">Submit
-            </button>
-        </form>
+                                 (rowDataChanged)="refreshFormControls()"
+                                 (gridReady)="gridReady($event)">
+                </ag-grid-angular>
+                <button style="margin-top: 10px; float: right;"
+                        mat-raised-button [disabled]="!gridForm.valid"
+                        type="submit">Submit
+                </button>
+            </form>
+        </div>
     `,
+    styles: [
+            `
+            .container {
+                height: 700px;
+            }
+            .dealership-form {
+                width: 100%;
+                height: 100%;
+            }
+            .dealership-field {
+                width: 300px;
+            } 
+        `
+    ]
 })
 export class GridComponent {
     private api: GridApi;
     private columnApi: ColumnApi;
 
     // this cannot be null - create it with no controls instead
-    gridForm: FormGroup = new FormGroup({});
+    gridForm: FormGroup = new FormGroup({
+        salesperson: new FormControl(),
+        telephone: new FormControl(),
+        address: new FormControl(),
+        stock: new FormGroup({})
+    });
+
+    branchNames: string[];
+    selectedBranch: string;
 
     columnDefs;
     rowData;
 
-    constructor(public snackBar: MatSnackBar) {
+    constructor(public snackBar: MatSnackBar,
+                private branchService: BranchService) {
+
         this.columnDefs = [
             {headerName: 'Order #', field: "orderNumber", width: 110, suppressSizeToFit: true},
             {headerName: 'Make', field: "make", cellRenderer: 'formCell'},
@@ -47,26 +95,37 @@ export class GridComponent {
             {headerName: 'Price', field: "price", cellRenderer: 'formCell'}
         ];
 
-        this.rowData = [
-            {orderNumber: 1, make: "Toyota", model: "Celica", price: 35000},
-            {orderNumber: 2, make: "Ford", model: "Mondeo", price: 32000},
-            {orderNumber: 3, make: "Porsche", model: "Boxter", price: 72000},
-            {orderNumber: 4, make: "Seat", model: "Leon", price: 32000},
-            {orderNumber: 5, make: "Honda", model: "CRV", price: 35000},
-        ];
+        this.branchNames = this.branchService.branches;
+        this.selectedBranch = this.branchNames[0];
+        this.updateForm();
+    }
+
+    updateForm() {
+        const currentBranch = this.branchService.getBranchData(this.selectedBranch);
+        this.gridForm.controls['salesperson'].patchValue(currentBranch.salesperson);
+        this.gridForm.controls['telephone'].patchValue(currentBranch.telephone);
+        this.gridForm.controls['address'].patchValue(currentBranch.address);
+
+        this.rowData = currentBranch.stock;
+    }
+
+    private refreshFormControls() {
+        if(this.api) {
+            // slight chicken and egg here - the grid cells will be created before the grid is ready, but
+            // we need set formGroup up front
+            // as such we'll create the grid (and cells) and force refresh the cells
+            // FormCellComponent will then set the form in the refresh, completing the loop
+            // this is only necessary once, on initialisation
+            this.createFormControls();
+            this.api.refreshCells({force: true});
+        }
     }
 
     gridReady(params: GridReadyEvent) {
         this.api = params.api;
         this.columnApi = params.columnApi;
 
-        // slight chicken and egg here - the grid cells will be created before the grid is ready, but
-        // we need set formGroup up front
-        // as such we'll create the grid (and cells) and force refresh the cells
-        // FormCellComponent will then set the form in the refresh, completing the loop
-        // this is only necessary once, on initialisation
-        this.createFormControls();
-        this.api.refreshCells({force: true});
+        this.refreshFormControls();
 
         this.api.sizeColumnsToFit();
     }
@@ -74,10 +133,19 @@ export class GridComponent {
     private createFormControls() {
         let columns = this.columnApi.getAllColumns();
 
+        const stockGroup = (<FormGroup>this.gridForm.controls['stock']);
+
+        // clear out old form group controls if switching between branches
+        let controlNames = Object.keys(stockGroup.controls);
+        controlNames.forEach((controlName) => {
+            stockGroup.removeControl(controlName)
+        });
+
         this.api.forEachNode((rowNode: RowNode) => {
-            columns.forEach((column: Column) => {
+            columns.filter((column:Column)=> column.getColDef().field !== 'orderNumber')
+                .forEach((column: Column) => {
                 const key = this.createKey(rowNode.id, column); // the cells will use this same createKey method
-                this.gridForm.addControl(key, new FormControl())
+                stockGroup.addControl(key, new FormControl())
             })
         });
     }
@@ -96,7 +164,7 @@ export class GridComponent {
 
     getContext() {
         return {
-            form: this.gridForm,
+            formGroup: this.gridForm.controls.stock,
             createKey: this.createKey
         }
     }
