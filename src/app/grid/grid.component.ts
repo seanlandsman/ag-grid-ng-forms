@@ -75,10 +75,11 @@ export class GridComponent {
         let columns = this.columnApi.getAllColumns();
 
         this.api.forEachNode((rowNode: RowNode) => {
-            columns.forEach((column: Column) => {
-                const key = this.createKey(rowNode.id, column); // the cells will use this same createKey method
-                this.gridForm.addControl(key, new FormControl())
-            })
+            columns.filter(column => column.getColDef().field !== 'orderNumber')
+                .forEach((column: Column) => {
+                    const key = this.createKey(rowNode.id, column); // the cells will use this same createKey method
+                    this.gridForm.addControl(key, new FormControl())
+                })
         });
     }
 
