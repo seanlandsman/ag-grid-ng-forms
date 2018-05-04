@@ -9,7 +9,7 @@ import {FormCellComponent} from "./form-cell/form-cell.component";
     selector: 'app-grid',
     template: `
         <form style="width: 750px; height: 300px;"
-              (ngSubmit)="onSubmit()" [formGroup]="gridForm">
+              (ngSubmit)="onSubmit()" [formGroup]="formGroup">
             <ag-grid-angular style="width: 100%; height: 100%;" class="ag-theme-material"
                              [rowData]="rowData"
                              [columnDefs]="columnDefs"
@@ -19,11 +19,10 @@ import {FormCellComponent} from "./form-cell/form-cell.component";
 
                              [getRowNodeId]="getRowNodeId"
 
-
                              (gridReady)="gridReady($event)">
             </ag-grid-angular>
             <button style="margin-top: 10px; float: right;"
-                    mat-raised-button [disabled]="!gridForm.valid"
+                    mat-raised-button
                     type="submit">Submit
             </button>
         </form>
@@ -34,7 +33,7 @@ export class GridComponent {
     private columnApi: ColumnApi;
 
     // this cannot be null - create it with no controls instead
-    gridForm: FormGroup = new FormGroup({});
+    formGroup: FormGroup = new FormGroup({});
 
     columnDefs;
     rowData;
@@ -60,11 +59,9 @@ export class GridComponent {
         this.api = params.api;
         this.columnApi = params.columnApi;
 
-        // slight chicken and egg here - the grid cells will be created before the grid is ready, but
-        // we need set formGroup up front
-        // as such we'll create the grid (and cells) and force refresh the cells
-        // FormCellComponent will then set the form in the refresh, completing the loop
-        // this is only necessary once, on initialisation
+        // slight chicken and egg here - the grid cells will be created before the grid is ready, but we need set
+        // formGroup up front as such we'll create the grid (and cells) and force refresh the cells FormCellComponent
+        // will then set the form in the refresh, completing the loop  this is only necessary once, on initialisation
         this.createFormControls();
         this.api.refreshCells({force: true});
 
@@ -77,33 +74,34 @@ export class GridComponent {
         this.api.forEachNode((rowNode: RowNode) => {
             columns.filter(column => column.getColDef().field !== 'orderNumber')
                 .forEach((column: Column) => {
-                    const key = this.createKey(rowNode.id, column); // the cells will use this same createKey method
-                    this.gridForm.addControl(key, new FormControl())
+                    const key = this.createKey(rowNode.id, column);    // the cells will use this same createKey method
+                    this.formGroup.addControl(key, new FormControl())
                 })
         });
     }
 
     getRowNodeId(data: any) {
-        // optional here - ag-Grid will create row ids if you don't supply one, but
-        // if you have a way of uniquely identifying rows here's where you'd do it.
-        // doing so would make it easier to pull out specific rows from the form,
-        // say by order number, as we do here
+        // optional here - ag-Grid will create row ids if you don't supply one, but if you have a way of uniquely
+        // identifying rows here's where you'd do it. Doing so would make it easier to pull out specific rows from the
+        // form, say by order number, as we do here
         return data.orderNumber;
     }
 
     getComponents() {
-        return {'formCell': FormCellComponent};
+        return {
+            'formCell': FormCellComponent
+        };
     }
 
     getContext() {
         return {
-            form: this.gridForm,
+            form: this.formGroup,
             createKey: this.createKey
         }
     }
 
     onSubmit() {
-        console.dir(this.gridForm.value);
+        console.dir(this.formGroup.value);
 
         this.snackBar.open("Open Console for Form State", null, {
             verticalPosition: "top",
