@@ -111,11 +111,10 @@ export class GridComponent {
 
     private refreshFormControls() {
         if(this.api) {
-            // slight chicken and egg here - the grid cells will be created before the grid is ready, but
-            // we need set formGroup up front
-            // as such we'll create the grid (and cells) and force refresh the cells
-            // FormCellComponent will then set the form in the refresh, completing the loop
-            // this is only necessary once, on initialisation
+            // slight chicken and egg here - the grid cells will be created before the grid is ready, but we need set
+            // formGroup up front as such we'll create the grid (and cells) and force refresh the cells
+            // FormCellComponent will then set the form in the refresh, completing the loop  this is only necessary
+            // once, on initialisation
             this.createFormControls();
             this.api.refreshCells({force: true});
         }

@@ -26,8 +26,8 @@ export class FormCellComponent {
     refresh(params: any): boolean {
         this.formGroup = params.context.formGroup;
 
-        // this could also be done in GridComponent.createFormControls, but the cell component could be doing something with
-        // the value, so it feels more natural that the control value be set here
+        // this could also be done in GridComponent.createFormControls, but the cell component could be doing something
+        // with the value, so it feels more natural that the control value be set here
         this.formGroup.controls[this.key].patchValue(this.value);
         return true;
     }
