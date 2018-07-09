@@ -4,13 +4,12 @@ import {MatSnackBar} from '@angular/material';
 
 import {Column, ColumnApi, GridApi, GridReadyEvent, RowNode} from "ag-grid";
 import {FormCellComponent} from "./form-cell/form-cell.component";
-import {Branch, BranchService} from "../branch.service";
+import {BranchService} from "../branch.service";
 
 @Component({
     selector: 'app-grid',
     template: `
-        <div class="container"
-                 fxLayout="column" fxLayoutAlign="start center">
+        <div class="container" fxLayout="column" fxLayoutAlign="start center">
             <mat-form-field class="dealership-field">
                 <mat-select placeholder="Branch" (selectionChange)="updateForm()" [(value)]="selectedBranch">
                     <mat-option *ngFor="let branch of branchNames" [value]="branch">
@@ -57,13 +56,15 @@ import {Branch, BranchService} from "../branch.service";
             .container {
                 height: 700px;
             }
+
             .dealership-form {
                 width: 100%;
                 height: 100%;
             }
+
             .dealership-field {
                 width: 300px;
-            } 
+            }
         `
     ]
 })
@@ -110,7 +111,7 @@ export class GridComponent {
     }
 
     private refreshFormControls() {
-        if(this.api) {
+        if (this.api) {
             // slight chicken and egg here - the grid cells will be created before the grid is ready, but we need set
             // formGroup up front as such we'll create the grid (and cells) and force refresh the cells
             // FormCellComponent will then set the form in the refresh, completing the loop  this is only necessary
@@ -141,11 +142,11 @@ export class GridComponent {
         });
 
         this.api.forEachNode((rowNode: RowNode) => {
-            columns.filter((column:Column)=> column.getColDef().field !== 'orderNumber')
+            columns.filter((column: Column) => column.getColDef().field !== 'orderNumber')
                 .forEach((column: Column) => {
-                const key = this.createKey(rowNode.id, column); // the cells will use this same createKey method
-                stockGroup.addControl(key, new FormControl())
-            })
+                    const key = this.createKey(rowNode.id, column); // the cells will use this same createKey method
+                    stockGroup.addControl(key, new FormControl())
+                })
         });
     }
 
