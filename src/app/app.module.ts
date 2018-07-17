@@ -3,7 +3,13 @@ import {NgModule} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 /* Material Modules*/
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {MatSnackBarModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule} from "@angular/material";
+import {
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatSnackBarModule
+} from "@angular/material";
 /* Flex */
 import {FlexLayoutModule} from "@angular/flex-layout";
 /* ag-Grid Module*/
