@@ -148,8 +148,7 @@ export class GridComponent {
             columns.filter((column: Column) => column.getColDef().field !== 'orderNumber')
                 .forEach((column: Column) => {
                     const key = this.createKey(this.columnApi, column); // the cells will use this same createKey method
-                    formArray.setControl(<any>key, new FormControl())
-                    console.log();
+                    formArray.setControl(<any>key, new FormControl());
                 });
             stockGroup.addControl(<any>rowNode.id, formArray);
         });
