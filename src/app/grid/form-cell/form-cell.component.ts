@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import {FormArray, FormGroup} from "@angular/forms";
+import {FormArray} from "@angular/forms";
 
 @Component({
     selector: 'app-form-cell',
