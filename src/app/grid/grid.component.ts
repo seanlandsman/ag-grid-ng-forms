@@ -10,12 +10,12 @@ import {FormCellComponent} from "./form-cell/form-cell.component";
     template: `
         <form style="width: 750px; height: 300px;"
               (ngSubmit)="onSubmit()" [formGroup]="formGroup">
-            <ag-grid-angular style="width: 100%; height: 100%;" class="ag-theme-material"
-                             [rowData]="rowData"
-                             [columnDefs]="columnDefs"
-
-                             [frameworkComponents]="getComponents()"
-                             [context]="getContext()"
+                <ag-grid-angular style="width: 100%; height: 100%;" class="ag-theme-material"
+                                 [rowData]="rowData"
+                                 [columnDefs]="columnDefs"
+    
+                                 [frameworkComponents]="getComponents()"
+                                 [context]="getContext()"
 
                              [getRowNodeId]="getRowNodeId"
 
@@ -95,7 +95,7 @@ export class GridComponent {
 
     getContext() {
         return {
-            form: this.formGroup,
+            formGroup: this.formGroup,
             createKey: this.createKey
         }
     }
